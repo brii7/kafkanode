@@ -22,7 +22,9 @@ const elasticSearchClient = new elastic.Client({
 
 var kafka = require('kafka-node'),
   Consumer = kafka.Consumer,
-  client = new kafka.KafkaClient({kafkaHost: '192.168.1.50:9092'}),
+  Offset = kafka.Offset,
+  client = new kafka.KafkaClient({kafkaHost: 'localhost:9092'}),
+  offset = new Offset(client),
   consumer = new Consumer(
     client,
     [
