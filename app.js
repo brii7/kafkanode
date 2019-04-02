@@ -13,6 +13,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use('/', indexRouter);
+const elastic = require('elasticsearch');
+
+const elasticSearchClient = new elastic.Client({
+  host: CONFIG.connectionURL,
+   log: 'error'
+ });
 
 var kafka = require('kafka-node'),
   Consumer = kafka.Consumer,
@@ -28,7 +34,26 @@ var kafka = require('kafka-node'),
   );
 
 consumer.on('message', function (message) {
+
+  console.log("");
+  console.log("*************** MESSAGE ***************");
   console.log(message);
+
+  elasticSearchClient.index({
+    index: 'bomberman',
+    type: 'event',
+    body: {
+      value: message.value,
+      date: new Date().toISOString()
+    }
+  }).then((result) => {
+    console.log("_____________________ ELASTIC SEARCH Successfully indexed _____________________");
+    console.log(result);
+  }).catch((error) => {
+    console.log(" ··············· ERROR IN ELASTIC SEARCH ···············");
+    console.error("Cannot index into ElasticSearch due to:");
+    console.error(error);
+  });
 });
 
 consumer.on('error', function (err) {
@@ -48,34 +73,5 @@ consumer.on('offsetOutOfRange', function (topic) {
     consumer.setOffset(topic.topic, topic.partition, min);
   });
 });
-
-
-
-
-
-
-
-
-
-
-// const elastic = require('elasticsearch');
-//
-// const client = new elastic.Client({
-//   host: CONFIG.connectionURL,
-//   log: 'error'
-// });
-//
-// const result = getQuery()
-//   .then(console.log)
-//   .catch(console.log);
-//
-//
-// async function getQuery() {
-//   return client.search({
-//     index: 'bomberman',
-//     body: {}
-//   })
-// }
-
 
 module.exports = app;
